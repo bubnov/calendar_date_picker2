@@ -23,6 +23,11 @@ typedef CalendarDayBuilder = Widget? Function({
   bool? isToday,
 });
 
+typedef CalendarDayButtonBuilder = Widget? Function(
+  Widget child,
+  VoidCallback? handler,
+);
+
 typedef CalendarYearBuilder = Widget? Function({
   required int year,
   TextStyle? textStyle,
@@ -49,6 +54,8 @@ class CalendarDatePicker2Config {
     this.controlsHeight,
     this.lastMonthIcon,
     this.nextMonthIcon,
+    this.lastMonthButtonBuilder,
+    this.nextMonthButtonBuilder,
     this.controlsTextStyle,
     this.dayTextStyle,
     this.selectedDayTextStyle,
@@ -63,6 +70,9 @@ class CalendarDatePicker2Config {
     this.selectableDayPredicate,
     this.dayTextStylePredicate,
     this.dayBuilder,
+    this.dayButtonBuilder,
+    this.dayButtonRadius,
+    this.dayButtonContainsInkWell,
     this.yearBuilder,
     this.disableModePicker,
     this.centerAlignModePicker,
@@ -70,10 +80,14 @@ class CalendarDatePicker2Config {
     this.modePickerTextHandler,
     this.selectedRangeDayTextStyle,
     this.rangeBidirectional = false,
+    this.weekdayLabelTextStyleProvider,
+    this.showHeaderDivider = false,
+    this.headerDividerColor,
+    this.headerPadding = EdgeInsets.zero,
+    this.contentPadding = EdgeInsets.zero,
   })  : calendarType = calendarType ?? CalendarDatePicker2Type.single,
         firstDate = DateUtils.dateOnly(firstDate ?? DateTime(1970)),
-        lastDate =
-            DateUtils.dateOnly(lastDate ?? DateTime(DateTime.now().year + 50)),
+        lastDate = DateUtils.dateOnly(lastDate ?? DateTime(DateTime.now().year + 50)),
         currentDate = currentDate ?? DateUtils.dateOnly(DateTime.now()),
         calendarViewMode = calendarViewMode ?? DatePickerMode.day;
 
@@ -103,6 +117,9 @@ class CalendarDatePicker2Config {
   /// Custom text style for weekday labels
   final TextStyle? weekdayLabelTextStyle;
 
+  /// Custom text style provider for weekday labels
+  final TextStyle? Function(String label, int dayIndex)? weekdayLabelTextStyleProvider;
+
   /// Index of the first day of week, where 0 points to Sunday, and 6 points to Saturday.
   final int? firstDayOfWeek;
 
@@ -111,9 +128,15 @@ class CalendarDatePicker2Config {
 
   /// Custom icon for last month button control
   final Widget? lastMonthIcon;
-
+  
   /// Custom icon for next month button control
   final Widget? nextMonthIcon;
+  
+  /// Custom last month button builder
+  final Widget? Function(VoidCallback? handler)? lastMonthButtonBuilder;
+
+  /// Custom next month button builder
+  final Widget? Function(VoidCallback? handler)? nextMonthButtonBuilder;
 
   /// Custom text style for calendar mode toggle control
   final TextStyle? controlsTextStyle;
@@ -161,6 +184,15 @@ class CalendarDatePicker2Config {
   /// Function to provide full control over day widget UI
   final CalendarDayBuilder? dayBuilder;
 
+  /// Function to build day widget button
+  final CalendarDayButtonBuilder? dayButtonBuilder;
+
+  /// Custom day button radius
+  final double? dayButtonRadius;
+  
+  /// Whether the button contains the ink well
+  final bool? dayButtonContainsInkWell;
+
   /// Function to provide full control over year widget UI
   final CalendarYearBuilder? yearBuilder;
 
@@ -181,6 +213,19 @@ class CalendarDatePicker2Config {
   /// Only applicable when [calendarType] is [CalendarDatePicker2Type.range].
   final bool rangeBidirectional;
 
+  /// Whether to show a divider between the header and the days picker.
+  /// False by default.
+  final bool showHeaderDivider;
+
+  /// A custom color for the divider
+  final Color? headerDividerColor;
+
+  /// The header padding
+  final EdgeInsets headerPadding;
+  
+  /// The content padding
+  final EdgeInsets contentPadding;
+
   CalendarDatePicker2Config copyWith({
     CalendarDatePicker2Type? calendarType,
     DateTime? firstDate,
@@ -193,6 +238,8 @@ class CalendarDatePicker2Config {
     double? controlsHeight,
     Widget? lastMonthIcon,
     Widget? nextMonthIcon,
+    Widget? Function(VoidCallback? handler)? Function()? lastMonthButtonBuilder,
+    Widget? Function(VoidCallback? handler)? Function()? nextMonthButtonBuilder,
     TextStyle? controlsTextStyle,
     TextStyle? dayTextStyle,
     TextStyle? selectedDayTextStyle,
@@ -208,12 +255,20 @@ class CalendarDatePicker2Config {
     SelectableDayPredicate? selectableDayPredicate,
     CalendarDayTextStylePredicate? dayTextStylePredicate,
     CalendarDayBuilder? dayBuilder,
+    CalendarDayButtonBuilder? Function()? dayButtonBuilder,
+    double? Function()? dayButtonRadius,
+    bool? Function()? dayButtonContainsInkWell,
     CalendarYearBuilder? yearBuilder,
     bool? disableModePicker,
     bool? centerAlignModePicker,
     Widget? customModePickerIcon,
     CalendarModePickerTextHandler? modePickerTextHandler,
     bool? rangeBidirectional,
+    TextStyle? Function(String, int) Function()? weekdayLabelTextStyleProvider,
+    bool? showHeaderDivider,
+    Color? Function()? headerDividerColor,
+    EdgeInsets? headerPadding,
+    EdgeInsets? contentPadding,
   }) {
     return CalendarDatePicker2Config(
       calendarType: calendarType ?? this.calendarType,
@@ -222,47 +277,48 @@ class CalendarDatePicker2Config {
       currentDate: currentDate ?? this.currentDate,
       calendarViewMode: calendarViewMode ?? this.calendarViewMode,
       weekdayLabels: weekdayLabels ?? this.weekdayLabels,
-      weekdayLabelTextStyle:
-          weekdayLabelTextStyle ?? this.weekdayLabelTextStyle,
+      weekdayLabelTextStyle: weekdayLabelTextStyle ?? this.weekdayLabelTextStyle,
       firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
       controlsHeight: controlsHeight ?? this.controlsHeight,
       lastMonthIcon: lastMonthIcon ?? this.lastMonthIcon,
       nextMonthIcon: nextMonthIcon ?? this.nextMonthIcon,
+      lastMonthButtonBuilder: lastMonthButtonBuilder == null ? this.lastMonthButtonBuilder : lastMonthButtonBuilder(),
+      nextMonthButtonBuilder: nextMonthButtonBuilder == null ? this.nextMonthButtonBuilder : nextMonthButtonBuilder(),
       controlsTextStyle: controlsTextStyle ?? this.controlsTextStyle,
       dayTextStyle: dayTextStyle ?? this.dayTextStyle,
       selectedDayTextStyle: selectedDayTextStyle ?? this.selectedDayTextStyle,
-      selectedDayHighlightColor:
-          selectedDayHighlightColor ?? this.selectedDayHighlightColor,
-      selectedRangeHighlightColor:
-          selectedRangeHighlightColor ?? this.selectedRangeHighlightColor,
+      selectedDayHighlightColor: selectedDayHighlightColor ?? this.selectedDayHighlightColor,
+      selectedRangeHighlightColor: selectedRangeHighlightColor ?? this.selectedRangeHighlightColor,
       disabledDayTextStyle: disabledDayTextStyle ?? this.disabledDayTextStyle,
       todayTextStyle: todayTextStyle ?? this.todayTextStyle,
       yearTextStyle: yearTextStyle ?? this.yearTextStyle,
-      selectedYearTextStyle:
-          selectedYearTextStyle ?? this.selectedYearTextStyle,
-      selectedRangeDayTextStyle:
-          selectedRangeDayTextStyle ?? this.selectedRangeDayTextStyle,
+      selectedYearTextStyle: selectedYearTextStyle ?? this.selectedYearTextStyle,
+      selectedRangeDayTextStyle: selectedRangeDayTextStyle ?? this.selectedRangeDayTextStyle,
       dayBorderRadius: dayBorderRadius ?? this.dayBorderRadius,
       yearBorderRadius: yearBorderRadius ?? this.yearBorderRadius,
-      selectableDayPredicate:
-          selectableDayPredicate ?? this.selectableDayPredicate,
-      dayTextStylePredicate:
-          dayTextStylePredicate ?? this.dayTextStylePredicate,
+      selectableDayPredicate: selectableDayPredicate ?? this.selectableDayPredicate,
+      dayTextStylePredicate: dayTextStylePredicate ?? this.dayTextStylePredicate,
       dayBuilder: dayBuilder ?? this.dayBuilder,
+      dayButtonBuilder: dayButtonBuilder == null ? this.dayButtonBuilder : dayButtonBuilder(),
+      dayButtonRadius: dayButtonRadius == null ? this.dayButtonRadius : dayButtonRadius(),
+      dayButtonContainsInkWell: dayButtonContainsInkWell == null ? this.dayButtonContainsInkWell : dayButtonContainsInkWell(),
       yearBuilder: yearBuilder ?? this.yearBuilder,
       disableModePicker: disableModePicker ?? this.disableModePicker,
-      centerAlignModePicker:
-          centerAlignModePicker ?? this.centerAlignModePicker,
+      centerAlignModePicker: centerAlignModePicker ?? this.centerAlignModePicker,
       customModePickerIcon: customModePickerIcon ?? this.customModePickerIcon,
-      modePickerTextHandler:
-          modePickerTextHandler ?? this.modePickerTextHandler,
+      modePickerTextHandler: modePickerTextHandler ?? this.modePickerTextHandler,
       rangeBidirectional: rangeBidirectional ?? this.rangeBidirectional,
+      weekdayLabelTextStyleProvider:
+          weekdayLabelTextStyleProvider == null ? this.weekdayLabelTextStyleProvider : weekdayLabelTextStyleProvider(),
+      showHeaderDivider: showHeaderDivider ?? this.showHeaderDivider,
+      headerDividerColor: headerDividerColor == null ? this.headerDividerColor : headerDividerColor(),
+      headerPadding: headerPadding ?? this.headerPadding,
+      contentPadding: contentPadding ?? this.contentPadding,
     );
   }
 }
 
-class CalendarDatePicker2WithActionButtonsConfig
-    extends CalendarDatePicker2Config {
+class CalendarDatePicker2WithActionButtonsConfig extends CalendarDatePicker2Config {
   CalendarDatePicker2WithActionButtonsConfig({
     CalendarDatePicker2Type? calendarType,
     DateTime? firstDate,
@@ -275,6 +331,8 @@ class CalendarDatePicker2WithActionButtonsConfig
     double? controlsHeight,
     Widget? lastMonthIcon,
     Widget? nextMonthIcon,
+    Widget? Function(VoidCallback? handler)? lastMonthButtonBuilder,
+    Widget? Function(VoidCallback? handler)? nextMonthButtonBuilder,
     TextStyle? controlsTextStyle,
     TextStyle? dayTextStyle,
     TextStyle? selectedDayTextStyle,
@@ -305,6 +363,14 @@ class CalendarDatePicker2WithActionButtonsConfig
     this.closeDialogOnCancelTapped,
     this.closeDialogOnOkTapped,
     this.buttonPadding,
+    TextStyle? Function(String, int)? weekdayLabelTextStyleProvider,
+    bool showHeaderDivider = false,
+    Color? headerDividerColor,
+    EdgeInsets headerPadding = EdgeInsets.zero,
+    EdgeInsets contentPadding = EdgeInsets.zero,
+    CalendarDayButtonBuilder? dayButtonBuilder,
+    double? dayButtonRadius,
+    bool? dayButtonContainsInkWell,
   }) : super(
           calendarType: calendarType,
           firstDate: firstDate,
@@ -317,6 +383,8 @@ class CalendarDatePicker2WithActionButtonsConfig
           controlsHeight: controlsHeight,
           lastMonthIcon: lastMonthIcon,
           nextMonthIcon: nextMonthIcon,
+          lastMonthButtonBuilder: lastMonthButtonBuilder,
+          nextMonthButtonBuilder: nextMonthButtonBuilder,
           controlsTextStyle: controlsTextStyle,
           dayTextStyle: dayTextStyle,
           selectedDayTextStyle: selectedDayTextStyle,
@@ -332,12 +400,18 @@ class CalendarDatePicker2WithActionButtonsConfig
           selectableDayPredicate: selectableDayPredicate,
           dayTextStylePredicate: dayTextStylePredicate,
           dayBuilder: dayBuilder,
+          dayButtonBuilder: dayButtonBuilder,
           yearBuilder: yearBuilder,
           disableModePicker: disableModePicker,
           centerAlignModePicker: centerAlignModePicker,
           customModePickerIcon: customModePickerIcon,
           modePickerTextHandler: modePickerTextHandler,
           rangeBidirectional: rangeBidirectional,
+          weekdayLabelTextStyleProvider: weekdayLabelTextStyleProvider,
+          showHeaderDivider: showHeaderDivider,
+          headerDividerColor: headerDividerColor,
+          headerPadding: headerPadding,
+          contentPadding: contentPadding,
         );
 
   /// The gap between calendar and action buttons
@@ -380,6 +454,8 @@ class CalendarDatePicker2WithActionButtonsConfig
     double? controlsHeight,
     Widget? lastMonthIcon,
     Widget? nextMonthIcon,
+    Widget? Function(VoidCallback? handler)? Function()? lastMonthButtonBuilder,
+    Widget? Function(VoidCallback? handler)? Function()? nextMonthButtonBuilder,
     TextStyle? controlsTextStyle,
     TextStyle? dayTextStyle,
     TextStyle? selectedDayTextStyle,
@@ -395,6 +471,9 @@ class CalendarDatePicker2WithActionButtonsConfig
     SelectableDayPredicate? selectableDayPredicate,
     CalendarDayTextStylePredicate? dayTextStylePredicate,
     CalendarDayBuilder? dayBuilder,
+    CalendarDayButtonBuilder? Function()? dayButtonBuilder,
+    double? Function()? dayButtonRadius,
+    bool? Function()? dayButtonContainsInkWell,
     CalendarYearBuilder? yearBuilder,
     bool? disableModePicker,
     bool? centerAlignModePicker,
@@ -410,6 +489,11 @@ class CalendarDatePicker2WithActionButtonsConfig
     bool? closeDialogOnOkTapped,
     EdgeInsets? buttonPadding,
     bool? rangeBidirectional,
+    TextStyle? Function(String, int) Function()? weekdayLabelTextStyleProvider,
+    bool? showHeaderDivider,
+    Color? Function()? headerDividerColor,
+    EdgeInsets? headerPadding,
+    EdgeInsets? contentPadding,
   }) {
     return CalendarDatePicker2WithActionButtonsConfig(
       calendarType: calendarType ?? this.calendarType,
@@ -418,54 +502,52 @@ class CalendarDatePicker2WithActionButtonsConfig
       currentDate: currentDate ?? this.currentDate,
       calendarViewMode: calendarViewMode ?? this.calendarViewMode,
       weekdayLabels: weekdayLabels ?? this.weekdayLabels,
-      weekdayLabelTextStyle:
-          weekdayLabelTextStyle ?? this.weekdayLabelTextStyle,
+      weekdayLabelTextStyle: weekdayLabelTextStyle ?? this.weekdayLabelTextStyle,
       firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
       controlsHeight: controlsHeight ?? this.controlsHeight,
       lastMonthIcon: lastMonthIcon ?? this.lastMonthIcon,
       nextMonthIcon: nextMonthIcon ?? this.nextMonthIcon,
+      lastMonthButtonBuilder: lastMonthButtonBuilder == null ? this.lastMonthButtonBuilder : lastMonthButtonBuilder(),
+      nextMonthButtonBuilder: nextMonthButtonBuilder == null ? this.nextMonthButtonBuilder : nextMonthButtonBuilder(),
       controlsTextStyle: controlsTextStyle ?? this.controlsTextStyle,
       dayTextStyle: dayTextStyle ?? this.dayTextStyle,
       selectedDayTextStyle: selectedDayTextStyle ?? this.selectedDayTextStyle,
-      selectedRangeDayTextStyle:
-          selectedRangeDayTextStyle ?? this.selectedRangeDayTextStyle,
-      selectedDayHighlightColor:
-          selectedDayHighlightColor ?? this.selectedDayHighlightColor,
-      selectedRangeHighlightColor:
-          selectedRangeHighlightColor ?? this.selectedRangeHighlightColor,
+      selectedRangeDayTextStyle: selectedRangeDayTextStyle ?? this.selectedRangeDayTextStyle,
+      selectedDayHighlightColor: selectedDayHighlightColor ?? this.selectedDayHighlightColor,
+      selectedRangeHighlightColor: selectedRangeHighlightColor ?? this.selectedRangeHighlightColor,
       disabledDayTextStyle: disabledDayTextStyle ?? this.disabledDayTextStyle,
       todayTextStyle: todayTextStyle ?? this.todayTextStyle,
       yearTextStyle: yearTextStyle ?? this.yearTextStyle,
-      selectedYearTextStyle:
-          selectedYearTextStyle ?? this.selectedYearTextStyle,
+      selectedYearTextStyle: selectedYearTextStyle ?? this.selectedYearTextStyle,
       dayBorderRadius: dayBorderRadius ?? this.dayBorderRadius,
       yearBorderRadius: yearBorderRadius ?? this.yearBorderRadius,
-      selectableDayPredicate:
-          selectableDayPredicate ?? this.selectableDayPredicate,
-      dayTextStylePredicate:
-          dayTextStylePredicate ?? this.dayTextStylePredicate,
+      selectableDayPredicate: selectableDayPredicate ?? this.selectableDayPredicate,
+      dayTextStylePredicate: dayTextStylePredicate ?? this.dayTextStylePredicate,
       dayBuilder: dayBuilder ?? this.dayBuilder,
+      dayButtonBuilder: dayButtonBuilder == null ? this.dayButtonBuilder : dayButtonBuilder(),
+      dayButtonRadius: dayButtonRadius == null ? this.dayButtonRadius : dayButtonRadius(),
+      dayButtonContainsInkWell: dayButtonContainsInkWell == null ? this.dayButtonContainsInkWell : dayButtonContainsInkWell(),
       yearBuilder: yearBuilder ?? this.yearBuilder,
       disableModePicker: disableModePicker ?? this.disableModePicker,
-      centerAlignModePicker:
-          centerAlignModePicker ?? this.centerAlignModePicker,
+      centerAlignModePicker: centerAlignModePicker ?? this.centerAlignModePicker,
       customModePickerIcon: customModePickerIcon ?? this.customModePickerIcon,
-      modePickerTextHandler:
-          modePickerTextHandler ?? this.modePickerTextHandler,
+      modePickerTextHandler: modePickerTextHandler ?? this.modePickerTextHandler,
       rangeBidirectional: rangeBidirectional ?? this.rangeBidirectional,
-      gapBetweenCalendarAndButtons:
-          gapBetweenCalendarAndButtons ?? this.gapBetweenCalendarAndButtons,
-      cancelButtonTextStyle:
-          cancelButtonTextStyle ?? this.cancelButtonTextStyle,
+      gapBetweenCalendarAndButtons: gapBetweenCalendarAndButtons ?? this.gapBetweenCalendarAndButtons,
+      cancelButtonTextStyle: cancelButtonTextStyle ?? this.cancelButtonTextStyle,
       cancelButton: cancelButton ?? this.cancelButton,
       okButtonTextStyle: okButtonTextStyle ?? this.okButtonTextStyle,
       okButton: okButton ?? this.okButton,
       openedFromDialog: openedFromDialog ?? this.openedFromDialog,
-      closeDialogOnCancelTapped:
-          closeDialogOnCancelTapped ?? this.closeDialogOnCancelTapped,
-      closeDialogOnOkTapped:
-          closeDialogOnOkTapped ?? this.closeDialogOnOkTapped,
+      closeDialogOnCancelTapped: closeDialogOnCancelTapped ?? this.closeDialogOnCancelTapped,
+      closeDialogOnOkTapped: closeDialogOnOkTapped ?? this.closeDialogOnOkTapped,
       buttonPadding: buttonPadding ?? this.buttonPadding,
+      weekdayLabelTextStyleProvider:
+          weekdayLabelTextStyleProvider == null ? this.weekdayLabelTextStyleProvider : weekdayLabelTextStyleProvider(),
+      showHeaderDivider: showHeaderDivider ?? this.showHeaderDivider,
+      headerDividerColor: headerDividerColor == null ? this.headerDividerColor : headerDividerColor(),
+      headerPadding: headerPadding ?? this.headerPadding,
+      contentPadding: contentPadding ?? this.contentPadding,
     );
   }
 }
